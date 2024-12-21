@@ -59,7 +59,7 @@ const mkdir = promisify(fs.mkdir)
 
 async function processDirSymlink(argv: ArgumentsCamelCase<ParseArgv>) {
   const { ip, op } = argv
-  logger.info(`Processing dir ${ip} linking to ${op}`, argv)
+  logger.info(`Processing dir ${ip} linking to ${op}`)
   const entries = await readdir(ip)
   for (const parent of entries) {
     logger.debug(green(`Processing ${parent}`))
