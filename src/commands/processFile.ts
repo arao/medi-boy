@@ -86,7 +86,7 @@ async function processDirSymlink(argv: ArgumentsCamelCase<ParseArgv>) {
       if (!fs.existsSync(likDir)) {
         await mkdir(likDir, { recursive: true })
       }
-      logger.debug(green(`Linking ${childrenPaths[index]} to ${path.join(op, generatedPaths[index]!)}`))
+      logger.info(green(`Linking ${childrenPaths[index]} to ${path.join(op, generatedPaths[index]!)}`))
       await symlink(childrenPaths[index]!, path.join(op, generatedPaths[index]!))
     }
   }
