@@ -7,7 +7,7 @@ import { promisify } from 'node:util'
 import { processLink } from '../engine'
 import * as path from 'node:path'
 import { logger } from '../logger'
-import { yellow } from 'picocolors'
+import { green, yellow } from 'picocolors'
 import { generateMediaPath } from './_shared'
 
 interface ParseArgv {
@@ -62,6 +62,7 @@ async function processDirSymlink(argv: ArgumentsCamelCase<ParseArgv>) {
   logger.info(`Processing dir ${ip} linking to ${op}`, argv)
   const entries = await readdir(ip)
   for (const parent of entries) {
+    logger.debug(green(`Processing ${parent}`))
     const parentPath = path.join(ip, parent)
     const parentStats = await stat(`${ip}/${parent}`)
     if (parentStats.isFile()) {
@@ -85,6 +86,7 @@ async function processDirSymlink(argv: ArgumentsCamelCase<ParseArgv>) {
       if (!fs.existsSync(likDir)) {
         await mkdir(likDir, { recursive: true })
       }
+      logger.debug(green(`Linking ${childrenPaths[index]} to ${path.join(op, generatedPaths[index]!)}`))
       await symlink(childrenPaths[index]!, path.join(op, generatedPaths[index]!))
     }
   }
