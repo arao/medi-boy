@@ -1,13 +1,22 @@
 import { IValueState } from '../engine/_shared'
 import { processLink } from '../engine'
 
-export function generateMediaPath(parentDetails: IValueState, child: string) {
+export interface IMediaPathDetails {
+  category: string
+  title: string
+  releaseYear?: string
+  intermediatePath: string
+  suggestedPath: string
+  child: string
+}
+
+export function generateMediaPath(parentDetails: IValueState, child: string): IMediaPathDetails {
   const childDetails: IValueState = processLink(child)
   const {
     title: parentTitle,
     season: parentSeason,
     episode: parentEpisode,
-    year: parentYear,
+    releaseYear: parentYear,
     special: parentSpecial,
     // resolution: parentResolution
   } = parentDetails
@@ -15,7 +24,7 @@ export function generateMediaPath(parentDetails: IValueState, child: string) {
     title: childTitle,
     season: childSeason,
     episode: childEpisode,
-    year: childYear,
+    releaseYear: childYear,
     special: childSpecial,
     // resolution: childResolution,
     // extension: childExtension,
@@ -48,12 +57,33 @@ export function generateMediaPath(parentDetails: IValueState, child: string) {
    * - if no episode and no season, and special => Movie/title/extra   => never seen this, but lets do the distribution.
    */
 
+  let fCategory
+  let fTitle
+  let fIntermediatePath
+  let suggestedPath
   if (hasEpisode && season) {
-    return `TV/${pascalTitle}${releaseYear ? ` (${releaseYear})` : ''}/Season ${season?.replaceAll(/s/gi, '')}${special ? '/Special' : ''}/${child}`
+    fCategory = 'TV'
+    fTitle = pascalTitle
+    fIntermediatePath = `/Season ${season?.replaceAll(/s/gi, '')}${special ? '/Special' : ''}`
+    suggestedPath = `TV/${pascalTitle}${releaseYear ? ` (${releaseYear})` : ''}/Season ${season?.replaceAll(/s/gi, '')}${special ? '/Special' : ''}/${child}`
   } else if (hasSeasonRange || (hasEpisode && !season) || (season && !hasEpisode)) {
-    return `TV/${pascalTitle}${releaseYear ? ` (${releaseYear})` : ''}${special ? '/Special' : ''}/${child}`
+    fCategory = 'TV'
+    fTitle = pascalTitle
+    fIntermediatePath = `${special ? '/Special' : ''}`
+    suggestedPath = `TV/${pascalTitle}${releaseYear ? ` (${releaseYear})` : ''}${special ? '/Special' : ''}/${child}`
   } else {
-    return `Movie/${pascalTitle}${releaseYear ? ` (${releaseYear})` : ''}${special ? '/Special' : ''}/${child}`
+    fCategory = 'Movie'
+    fTitle = pascalTitle
+    fIntermediatePath = `${special ? '/Special' : ''}`
+    suggestedPath = `Movie/${pascalTitle}${releaseYear ? ` (${releaseYear})` : ''}${special ? '/Special' : ''}/${child}`
+  }
+  return {
+    category: fCategory,
+    title: fTitle ?? '',
+    releaseYear,
+    intermediatePath: fIntermediatePath,
+    suggestedPath,
+    child,
   }
 }
 

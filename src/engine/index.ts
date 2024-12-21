@@ -16,10 +16,11 @@ const parserStore: IMediaParser[] = [
     name: 'episode',
     targetRegex: [
       {
-        regex: /(?<episode>\d{1,3}[a-z]?(?=[\s_-]*?\[.*?\]?\.(?:mkv|mp4)$))/gi, // episode at the last of media
+        regex: /(?<season>\d{1,3})[\s_-]+(?<episode>\d{1,3}[a-z]?)(?=[\s_-]*?(?:\[.*?])?\.(?:mkv|mp4)$)/gi, // episode at the last of media
+        variableNames: ['season', 'episode'],
       },
       {
-        regex: /(?<episode>[\s_-]\d{1,3}[\s_-])(?=.*?mkv|mp4$)/gi, // episode with two values only.
+        regex: /(?<=[\s_-])(?<episode>\d{1,3}[a-z]?(?=[\s_-]*?(?:\[.*?\])?\.(?:mkv|mp4)$))/g, // episode at the last of media
       },
     ],
   },
@@ -111,7 +112,8 @@ const parserStore: IMediaParser[] = [
         },
       },
       {
-        regex: /[.([\s-]?\s*(?<season>S\d{1,2}(?:[\s.-]S?\d{1,2})?)\s*[-.)\]\s]?\s*/gi, // S01-S06
+        // fix for [s9-s10us] Digimon
+        regex: /[.([\s-]?\s*(?<!\w)(?<season>S\d{1,2}(?:[\s.-]S?\d{1,2})?)\s*[-.)\]\s]?\s*(?!\w)/gi, // S01-S06
         postProcess: (group: Record<string, string>) => {
           const season = group?.['season']?.replaceAll(/s/gi, '')?.replaceAll(/\s+/gi, ' ')
           return {
@@ -119,13 +121,18 @@ const parserStore: IMediaParser[] = [
           } as Record<string, string>
         },
       },
+      {
+        regex: /[\s_-]+(?<episode>\d{1,3}[\s_-]+\d{1,3})(?:$|[\s_-])/gi,
+        variableNames: ['episode'],
+      },
     ],
   },
   {
     name: 'special',
-    targetRegex: [{
+    targetRegex: [
+      {
         // NCED, NCOP, Opening, Ending, christmas.special Holiday.Special
-        regex: /[-\s_[{(]?(?<special>NCED|NCOP|Opening|Ending|(?:(christmas|holiday)[\s._-]speciale?)|(special[\s._-]ending))/gi,
+        regex: /[-\s_[{(]?(?<special>NCED|NCOP|Opening|Ending|(?:(christmas|holiday)[\s._-]speciale?)|(special[\s._-]ending)|([\s[](?:sp|pv|ova)\d*?[\s\]]))/gi,
       },
     ],
     // postFilters: [(input) => input],
@@ -135,7 +142,7 @@ const parserStore: IMediaParser[] = [
     filters: [
       (input) => input.replaceAll(/(The)?[\s.-_]?Complete?[\s.-_]?Collection/gi, ''),
       (input) =>
-        _.splitAndFirst(input, SEPARATOR, /s\d{1,3}/i, /season\d{1,3}/i, /seasons?\d{1,3}/i)
+        _.splitAndFirst(input, SEPARATOR, /\s\d{1,3}$/i, /seasons?[\s_-]*\d{1,3}/i, /seasons?\d{1,3}/i)
           .replaceAll(/[[{(].+?([}\])])/gi, '')
           .replaceAll(/[[(].+?$/gi, '')
           .replaceAll(/【.*】/gi, '')
@@ -146,7 +153,7 @@ const parserStore: IMediaParser[] = [
       (input) => {
         // eslint-disable-next-line no-control-regex
         const foreignCharacterRegex = /[^\u0000-\u05C0\u2100-\u214F]+/gi
-        const undesiredCharactersRegex = /[~"']/gi
+        const undesiredCharactersRegex = /[~"'!]/gi
         return input
           .split('')
           .filter((i) => !i.match(foreignCharacterRegex)?.length)
@@ -208,4 +215,4 @@ export function processLink(input: string): IValueState {
   }, {})
 }
 
-// console.log(processLink("Lucifer (2016) Season 1-6 + Extras (1080p BluRay x265 HEVC 10bit EAC3 5.1 Ghost)"))
+console.log(processLink('American Dad! Seasons 1 to 18 (S01-S18) Remastered Edition [NVEnc 10Bit H265 1080p][AAC 6Ch][English Subs]'))
