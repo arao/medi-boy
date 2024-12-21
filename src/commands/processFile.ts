@@ -7,7 +7,7 @@ import { promisify } from 'node:util'
 import { processLink } from '../engine'
 import * as path from 'node:path'
 import { logger } from '../logger'
-import { green, yellow } from 'picocolors'
+import { blue, green, yellow } from 'picocolors'
 import { generateMediaPath } from './_shared'
 
 interface ParseArgv {
@@ -54,7 +54,7 @@ export function builder(yargs: Argv<ParseArgv>): Argv {
 
 const readdir = promisify(fs.readdir)
 const stat = promisify(fs.stat)
-const symlink = promisify(fs.symlink)
+// const symlink = promisify(fs.symlink)
 const mkdir = promisify(fs.mkdir)
 
 async function processDirSymlink(argv: ArgumentsCamelCase<ParseArgv>) {
@@ -81,13 +81,25 @@ async function processDirSymlink(argv: ArgumentsCamelCase<ParseArgv>) {
     }
     const generatedPaths = processDir(parent, cleanedChildren)
     for (let index = 0; index < generatedPaths.length; index++) {
+      const targetPath = childrenPaths[index]!
       const linkPath = path.join(op, generatedPaths[index]!)
       const likDir = path.dirname(linkPath)
       if (!fs.existsSync(likDir)) {
         await mkdir(likDir, { recursive: true })
       }
-      logger.info(green(`Linking ${childrenPaths[index]} to ${path.join(op, generatedPaths[index]!)}`))
-      await symlink(childrenPaths[index]!, path.join(op, generatedPaths[index]!))
+      logger.info(green(`Linking ${targetPath} to ${linkPath}`))
+      if (fs.existsSync(linkPath)) {
+        const existingLinkPath = fs.readlinkSync(linkPath)
+        if (existingLinkPath != targetPath) {
+          logger.warn(yellow(`Removing existing link ${linkPath} as value is updated, current ${existingLinkPath}`))
+          fs.unlinkSync(linkPath)
+        } else {
+          logger.info(blue(`Skipping existing link ${linkPath}, current ${existingLinkPath}`))
+          continue
+        }
+      }
+      fs.symlinkSync(targetPath, linkPath)
+      logger.info(green(`processed link ${linkPath}, to ${targetPath}`))
     }
   }
 }
